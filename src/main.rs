@@ -8,12 +8,24 @@ struct ListProps {
 
 #[function_component(DummyList)]
 fn dummy_list(ListProps { fields }: &ListProps) -> Html {
-    let fields_html: Html = fields
+    // The left/top positioning values depend on the index at which a field is.
+    // We compute them by enumerating the iterator values.
+    let mut fields_with_positioning: Vec<_> = fields
         .into_iter()
         .enumerate()
-        .map(|(idx, field)| {
+        .map(|(idx, field)| (*field, idx, idx))
+        .collect();
+    // To avoid recreating elements when their order switches, we sort the
+    // augmented field values so that each field is always at the same list
+    // position in the DOM while having left/top values matching its position
+    // in the original array.
+    fields_with_positioning.sort_by(|a, b| b.0.cmp(&a.0));
+
+    let fields_html: Html = fields_with_positioning
+        .into_iter()
+        .map(|(field, left, top)| {
             html! {
-                <div key={*field} style={format!("position: absolute; left: {}rem; top: {}rem; background: lightblue; transition: all 1s;", idx, idx)}>
+                <div key={field} style={format!("position: absolute; left: {}rem; top: {}rem; background: lightblue; transition: all 1s;", left, top)}>
                     { field }
                 </div>
             }
